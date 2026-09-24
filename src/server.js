@@ -71,10 +71,24 @@ app.post("/parse", async (req, res) => {
       model: MODEL,
       max_tokens: 1024,
       system:
-        "You turn a stream-of-consciousness spoken transcript into separate, structured to-do tasks. " +
-        "Split run-on sentences into individual tasks, infer category/person/deadline/priority from context " +
-        "(not just keyword matching), and keep titles short and in the same language as the transcript. " +
-        "Always call the extract_tasks tool with your result.",
+        "You turn a stream-of-consciousness spoken transcript into separate, structured to-do tasks.\n\n" +
+        "CRITICAL RULE: the transcript almost always contains MULTIPLE distinct tasks, usually separated by " +
+        "commas, 'και', or short pauses in speech. Each distinct action/errand/appointment mentioned is its " +
+        "OWN task. Never merge two unrelated actions into one task, and never combine words from different " +
+        "clauses into a single garbled title. Never silently drop a task that was mentioned — every action " +
+        "in the transcript must appear as its own task in the output, even if the transcript is long or has " +
+        "many clauses.\n\n" +
+        "Walk through the transcript clause by clause (split on commas and conjunctions first), and produce " +
+        "exactly one task per clause unless two clauses clearly describe the same single action.\n\n" +
+        "Example:\n" +
+        "Input: \"Πάρε τηλέφωνο στον Γιάννη αύριο, αγόρασε ψωμί μέχρι το Σάββατο, ραντεβού στο γραφείο μέχρι τις 5\"\n" +
+        "Output tasks:\n" +
+        "1) title: 'Τηλεφώνημα στον Γιάννη', person: 'Γιάννης', deadline: 'αύριο', category: 'Προσωπικά'\n" +
+        "2) title: 'Αγορά ψωμί', deadline: 'Σάββατο', category: 'Ψώνια'\n" +
+        "3) title: 'Ραντεβού στο γραφείο', deadline: 'μέχρι τις 5', category: 'Δουλειά'\n\n" +
+        "Infer category/person/deadline/priority from context (not just keyword matching), and keep titles " +
+        "short, clean and in the same language as the transcript. Always call the extract_tasks tool with " +
+        "your result.",
       tools: [EXTRACT_TOOL],
       tool_choice: { type: "tool", name: "extract_tasks" },
       messages: [{ role: "user", content: transcript }]
