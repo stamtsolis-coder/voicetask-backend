@@ -71,24 +71,33 @@ app.post("/parse", async (req, res) => {
       model: MODEL,
       max_tokens: 1024,
       system:
-        "You turn a stream-of-consciousness spoken transcript into separate, structured to-do tasks.\n\n" +
-        "CRITICAL RULE: the transcript almost always contains MULTIPLE distinct tasks, usually separated by " +
-        "commas, 'και', or short pauses in speech. Each distinct action/errand/appointment mentioned is its " +
-        "OWN task. Never merge two unrelated actions into one task, and never combine words from different " +
-        "clauses into a single garbled title. Never silently drop a task that was mentioned — every action " +
-        "in the transcript must appear as its own task in the output, even if the transcript is long or has " +
-        "many clauses.\n\n" +
-        "Walk through the transcript clause by clause (split on commas and conjunctions first), and produce " +
-        "exactly one task per clause unless two clauses clearly describe the same single action.\n\n" +
-        "Example:\n" +
+        "You turn a spoken or typed transcript into one or more structured to-do tasks.\n\n" +
+        "DEFAULT RULE: if the transcript expresses a SINGLE continuous thought, note, complaint, description or " +
+        "request — even if it is a long run-on sentence containing words like 'αλλά', 'και', 'ή', 'επειδή', or " +
+        "commas used mid-thought — keep it as ONE single task. Do not fragment one idea into several tasks just " +
+        "because it has multiple clauses or connecting words. When in doubt, prefer ONE task over splitting.\n\n" +
+        "ONLY split into multiple tasks when the speaker is clearly rattling off several separate, unrelated " +
+        "errands/appointments back to back — short independent phrases, each with its own distinct action, " +
+        "usually said one after another (often, but not only, separated by commas). If removing one clause " +
+        "would leave the rest still making complete sense as an unrelated task, they are separate. If the " +
+        "clauses depend on each other to make sense (one continuous point being made), they are ONE task.\n\n" +
+        "Never combine words from unrelated clauses into a single garbled/nonsensical title. When a transcript " +
+        "is a single note or thought, its title should preserve the full meaning (lightly cleaned up, not " +
+        "truncated or dropped) — do not aggressively shorten it into a fragment that loses information. When a " +
+        "transcript contains several distinct short errands, give each its own short, clean title.\n\n" +
+        "Examples:\n" +
         "Input: \"Πάρε τηλέφωνο στον Γιάννη αύριο, αγόρασε ψωμί μέχρι το Σάββατο, ραντεβού στο γραφείο μέχρι τις 5\"\n" +
-        "Output tasks:\n" +
+        "→ THREE separate short errands, one after another → 3 tasks:\n" +
         "1) title: 'Τηλεφώνημα στον Γιάννη', person: 'Γιάννης', deadline: 'αύριο', category: 'Προσωπικά'\n" +
         "2) title: 'Αγορά ψωμί', deadline: 'Σάββατο', category: 'Ψώνια'\n" +
         "3) title: 'Ραντεβού στο γραφείο', deadline: 'μέχρι τις 5', category: 'Δουλειά'\n\n" +
-        "Infer category/person/deadline/priority from context (not just keyword matching), and keep titles " +
-        "short, clean and in the same language as the transcript. Always call the extract_tasks tool with " +
-        "your result.",
+        "Input: \"Να θυμηθώ ότι υπάρχει μεγάλο θέμα με την εφαρμογή, δεν αποθηκεύει σωστά το κείμενο αλλά το " +
+        "σπάει σε πολλά κομμάτια\"\n" +
+        "→ ONE continuous thought/note about a single problem → 1 task:\n" +
+        "1) title: 'Θέμα με την εφαρμογή: δεν αποθηκεύει σωστά το κείμενο, το σπάει σε πολλά κομμάτια', " +
+        "category: 'Δουλειά'\n\n" +
+        "Infer category/person/deadline/priority from context (not just keyword matching), and keep the same " +
+        "language as the transcript. Always call the extract_tasks tool with your result.",
       tools: [EXTRACT_TOOL],
       tool_choice: { type: "tool", name: "extract_tasks" },
       messages: [{ role: "user", content: transcript }]
